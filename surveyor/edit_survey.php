@@ -481,9 +481,9 @@ function renderBoxes($prefix, $json)
                     <div class="col-md-4">
                         <label>Total PV (KW)</label>
                         <input class="form-control" id="totalPV" name="total_pv" value="<?=
-                            (e('panel_power') && e('panel_count'))
-                            ? number_format(e('panel_power') * e('panel_count'), 2)
-                            : '' ?>" readonly>
+                                                                                        (e('panel_power') && e('panel_count'))
+                                                                                            ? number_format(e('panel_power') * e('panel_count'), 2)
+                                                                                            : '' ?>" readonly>
                     </div>
                 </div>
 
@@ -552,7 +552,7 @@ function renderBoxes($prefix, $json)
 
                     <?php foreach ($invData['inverters'] as $i => $inv):
                         $prefixName = "inverter_details[inverters][{$i}]";
-                        ?>
+                    ?>
                         <div class="card mb-3 p-3">
                             <div class="card-header">Inverter <?= $i + 1 ?></div>
                             <div class="card-body">
@@ -767,7 +767,7 @@ function renderBoxes($prefix, $json)
 
                 <?php
                 $hasCableData = false; // flag to check if we have any cable data at all
-                
+
                 foreach (['ac' => 'AC', 'dc' => 'DC', 'battery' => 'Battery'] as $key => $label):
                     $cables = json_decode($survey[$key . '_cables'] ?? '[]', true);
 
@@ -775,7 +775,7 @@ function renderBoxes($prefix, $json)
                         continue;
 
                     $hasCableData = true; // we have at least one set of cables
-                    ?>
+                ?>
                     <h6><?= $label ?> Cables</h6>
 
                     <?php foreach ($cables as $i => $cable): ?>
@@ -827,11 +827,30 @@ function renderBoxes($prefix, $json)
                             </div>
 
                             <!-- MM -->
-                            <div class="col-md-2">
+                            <!-- <div class="col-md-2">
                                 <label class="form-label">MM</label>
                                 <input name="<?= $key ?>_cables[<?= $i ?>][mm]" class="form-control"
                                     value="<?= htmlspecialchars($mmMap[$cable['mm']] ?? '') ?>">
+                            </div> -->
+                            <div class="col-md-2">
+                                <label class="form-label">MM</label>
+                                <select name="<?= $key ?>_cables[<?= $i ?>][mm]" class="form-control">
+                                    <option value="">-- Select MM --</option>
+                                    <?php
+                                    // Fetch only MM values allowed for this cable type (ac/dc/battery)
+                                    $stmt = $pdo->prepare("SELECT id, value FROM cable_mms WHERE category IN ('all', ?) ORDER BY value");
+                                    $stmt->execute([$key]);
+                                    $mms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                                    foreach ($mms as $mm) {
+                                        $selected = ((string) ($cable['mm'] ?? '') === (string) $mm['id']) ? 'selected' : '';
+                                        echo "<option value='" . htmlspecialchars($mm['id']) . "' $selected>" . htmlspecialchars($mm['value']) . "</option>";
+                                    }
+                                    ?>
+                                </select>
                             </div>
+
+
 
                             <!-- Feet -->
                             <div class="col-md-2">
@@ -927,7 +946,7 @@ function renderBoxes($prefix, $json)
                     <?php foreach ($nm_steps as $i => $label):
                         $state = ($i < $currentStep) ? 'completed' : (($i === $currentStep) ? 'current' : 'upcoming');
                         $barCls = ($i < $currentStep) ? 'completed' : 'upcoming';
-                        ?>
+                    ?>
                         <div class="nm-step <?= $state ?>">
                             <div class="nm-dot">✓</div>
                             <div class="nm-label"><?= htmlspecialchars($label) ?></div>
@@ -961,7 +980,7 @@ function renderBoxes($prefix, $json)
 
         // Run calculation once when page loads
         calculateTotalPV();
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function() {
             const toggle = document.getElementById("batteryToggle");
             const hasBatteryData = <?= !empty($batteryData) ? 'true' : 'false' ?>;
 
@@ -977,7 +996,7 @@ function renderBoxes($prefix, $json)
         });
 
         document.querySelectorAll("select[name$='[manufacturer]']").forEach(manufacturerSelect => {
-            manufacturerSelect.addEventListener("change", function () {
+            manufacturerSelect.addEventListener("change", function() {
                 const manufacturerId = this.value;
                 const modelSelect = this.closest(".row").querySelector("select[name$='[model]']");
                 modelSelect.innerHTML = '<option value="">-- Select Model --</option>'; // reset models
@@ -998,7 +1017,7 @@ function renderBoxes($prefix, $json)
             });
         });
         document.querySelectorAll(".battery-manufacturer").forEach(manufacturerSelect => {
-            manufacturerSelect.addEventListener("change", function () {
+            manufacturerSelect.addEventListener("change", function() {
                 const manufacturerId = this.value;
                 const card = this.closest(".card-body");
                 const typeSelect = card.querySelector(".battery-type");
@@ -1023,7 +1042,7 @@ function renderBoxes($prefix, $json)
         });
 
         document.querySelectorAll(".battery-type").forEach(typeSelect => {
-            typeSelect.addEventListener("change", function () {
+            typeSelect.addEventListener("change", function() {
                 const typeId = this.value;
                 const card = this.closest(".card-body");
                 const manufacturerId = card.querySelector(".battery-manufacturer").value;
@@ -1045,7 +1064,7 @@ function renderBoxes($prefix, $json)
                     });
             });
         });
-        (function () {
+        (function() {
             function toggleCustom(select, customSelector) {
                 var row = select.closest('.row');
                 var custom = row ? row.querySelector(customSelector) : null;
@@ -1054,24 +1073,24 @@ function renderBoxes($prefix, $json)
             }
 
             // initial toggle for core and feet selects
-            document.querySelectorAll('.core-select').forEach(function (s) {
+            document.querySelectorAll('.core-select').forEach(function(s) {
                 toggleCustom(s, '.core-custom');
-                s.addEventListener('change', function () {
+                s.addEventListener('change', function() {
                     toggleCustom(s, '.core-custom');
                 });
             });
 
-            document.querySelectorAll('.feet-select').forEach(function (s) {
+            document.querySelectorAll('.feet-select').forEach(function(s) {
                 toggleCustom(s, '.feet-custom');
-                s.addEventListener('change', function () {
+                s.addEventListener('change', function() {
                     toggleCustom(s, '.feet-custom');
                 });
             });
 
             // name custom toggle (name-select -> name-custom)
-            document.querySelectorAll('.name-select').forEach(function (s) {
+            document.querySelectorAll('.name-select').forEach(function(s) {
                 toggleCustom(s, '.name-custom');
-                s.addEventListener('change', function () {
+                s.addEventListener('change', function() {
                     toggleCustom(s, '.name-custom');
                 });
             });
@@ -1080,7 +1099,7 @@ function renderBoxes($prefix, $json)
 
 
         const initialStep = <?= $currentStep ?>; // DB value
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function() {
             const select = document.getElementById("net_metering_progress");
             const timeline = document.getElementById("nm-timeline-edit");
             const stepDivs = timeline.querySelectorAll(".nm-step");
@@ -1106,7 +1125,7 @@ function renderBoxes($prefix, $json)
             updateTimeline(initialStep);
 
             // Sequential restriction for preview
-            select.addEventListener("change", function () {
+            select.addEventListener("change", function() {
                 const newStep = parseInt(this.value, 10);
 
                 if (!isNaN(newStep) && newStep === initialStep + 1) {
@@ -1120,7 +1139,6 @@ function renderBoxes($prefix, $json)
                 }
             });
         });
-
     </script>
 
 </body>
