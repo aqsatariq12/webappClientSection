@@ -7,17 +7,37 @@ if ($_SESSION['role'] !== 'surveyor') {
     exit;
 }
 
+$client_id = isset($_GET['client_id']) ? clean($_GET['client_id']) : null;
+
 $survey_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+// $stmt = $pdo->prepare("
+//     SELECT 
+//         s.*, 
+//         u.name AS surveyor_name
+//     FROM surveys s
+//     JOIN users u ON s.user_id = u.id
+//     WHERE s.id = ?
+// ");
+// $stmt->execute([$survey_id]);
+// $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+//survey, surveyor, client INFO
 $stmt = $pdo->prepare("
     SELECT 
-        s.*, 
-        u.name AS surveyor_name
+        s.*,
+        u.name AS surveyor_name,
+        c.name AS client_name,
+        c.cnic,
+        c.contact_no_1,
+        c.address
     FROM surveys s
     JOIN users u ON s.user_id = u.id
+    JOIN clients c ON s.client_id = c.id
     WHERE s.id = ?
 ");
 $stmt->execute([$survey_id]);
 $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
 
 // Fetch manufacturers, types, models into arrays for lookup
 $manuMap = [];
@@ -68,6 +88,22 @@ $stmt = $pdo->query("SELECT id, value FROM cable_feet");
 foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
     $feetMap[$row['id']] = $row['value'];
 }
+
+//client Info
+$clientStmt = $pdo->prepare("
+    SELECT 
+        c.name,
+        c.cnic,
+        c.contact_no_1,
+        c.address,
+        a.assigned_date
+    FROM clients c
+    INNER JOIN assignments a ON c.id = a.client_id
+    WHERE c.id = ? AND a.surveyor_id = ?
+");
+
+$clientStmt->execute([$client_id, $_SESSION['user_id']]);
+$client = $clientStmt->fetch();
 
 if (!$data) {
     echo "Survey not found.";
@@ -222,6 +258,33 @@ if (!$data) {
                 <div class="col-md-4"><label>Date</label>
                     <p><?= date('d/m/Y', strtotime($data['created_at'])) ?></p>
                 </div>
+            </div>
+        </div>
+        <!-- Client Details -->
+        <div class="form-section">
+            <h5>Client Details</h5>
+            <div class="row mb-2">
+
+                <div class="col-md-4">
+                    <label>Client Name</label>
+                    <p><?= htmlspecialchars($data['client_name']) ?></p>
+                </div>
+
+                <div class="col-md-4">
+                    <label>CNIC</label>
+                    <p><?= htmlspecialchars($data['cnic']) ?></p>
+                </div>
+
+                <div class="col-md-4">
+                    <label>Contact</label>
+                    <p><?= htmlspecialchars($data['contact_no_1']) ?></p>
+                </div>
+
+                <div class="col-md-8">
+                    <label>Address</label>
+                    <p><?= htmlspecialchars($data['address']) ?></p>
+                </div>
+
             </div>
         </div>
 

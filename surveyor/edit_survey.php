@@ -12,7 +12,18 @@ if (!$survey_id) {
     die("Survey ID missing.");
 }
 
-$stmt = $pdo->prepare("SELECT * FROM surveys WHERE id = ?");
+// $stmt = $pdo->prepare("SELECT * FROM surveys WHERE id = ?");
+$stmt = $pdo->prepare("
+    SELECT 
+        s.*,
+        c.name AS client_name,
+        c.cnic,
+        c.contact_no_1,
+        c.address
+    FROM surveys s
+    JOIN clients c ON s.client_id = c.id
+    WHERE s.id = ?
+");
 $stmt->execute([$survey_id]);
 $survey = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -372,6 +383,39 @@ function renderBoxes($prefix, $json)
                     </div>
                 </div>
             </div>
+
+            <!-- Client Details -->
+            <div class="form-section">
+                <h5>Client Details</h5>
+                <div class="row mb-2">
+
+                    <div class="col-md-4">
+                        <label>Client</label>
+                        <input type="text" class="form-control"
+                            value="<?= htmlspecialchars($survey['client_name']) ?>" readonly>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label>CNIC</label>
+                        <input type="text" class="form-control"
+                            value="<?= htmlspecialchars($survey['cnic']) ?>" readonly>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label>Contact</label>
+                        <input type="text" class="form-control"
+                            value="<?= htmlspecialchars($survey['contact_no_1']) ?>" readonly>
+                    </div>
+
+                    <div class="col-md-8">
+                        <label>Address</label>
+                        <input type="text" class="form-control"
+                            value="<?= htmlspecialchars($survey['address']) ?>" readonly>
+                    </div>
+
+                </div>
+            </div>
+
 
             <!-- System Info -->
             <div class="form-section">

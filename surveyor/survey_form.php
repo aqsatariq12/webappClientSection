@@ -20,6 +20,22 @@ $user_name_stmt = $pdo->prepare("SELECT name FROM users WHERE id = ?");
 $user_name_stmt->execute([$user_id]);
 $user_name = $user_name_stmt->fetchColumn();
 
+//client Info
+$clientStmt = $pdo->prepare("
+    SELECT 
+        c.name,
+        c.cnic,
+        c.contact_no_1,
+        c.address,
+        a.assigned_date
+    FROM clients c
+    INNER JOIN assignments a ON c.id = a.client_id
+    WHERE c.id = ? AND a.surveyor_id = ?
+");
+
+$clientStmt->execute([$client_id, $_SESSION['user_id']]);
+$client = $clientStmt->fetch();
+
 
 
 $nm_steps = [
@@ -188,6 +204,44 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
         </div>
       </div>
 
+      <!-- Client Details -->
+      <div class="form-section">
+        <h5>Client Details</h5>
+        <div class="row mb-2">
+
+          <div class="col-md-4">
+            <label>Client</label>
+            <input type="text" class="form-control"
+              value="<?= htmlspecialchars($client['name']) ?>" readonly>
+          </div>
+
+          <div class="col-md-4">
+            <label>CNIC</label>
+            <input type="text" class="form-control"
+              value="<?= htmlspecialchars($client['cnic']) ?>" readonly>
+          </div>
+
+          <div class="col-md-4">
+            <label>Contact</label>
+            <input type="text" class="form-control"
+              value="<?= htmlspecialchars($client['contact_no_1']) ?>" readonly>
+          </div>
+
+          <div class="col-md-4">
+            <label>Address</label>
+            <input type="text" class="form-control"
+              value="<?= htmlspecialchars($client['address']) ?>" readonly>
+          </div>
+
+          <div class="col-md-4">
+            <label>Assigned</label>
+            <input type="text" class="form-control"
+              value="<?= htmlspecialchars($client['assigned_date']) ?>" readonly>
+          </div>
+
+        </div>
+      </div>
+
       <div class="form-section">
         <h5>System & Bill Info</h5>
         <div class="row mb-3">
@@ -279,8 +333,8 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
           <div class="col-md-4">
             <label>Total PV (KW)</label>
             <input type="text" id="totalPV" name="total_pv" class="form-control" readonly value="<?= (isset($data['panel_power'], $data['panel_count']) && $data['panel_power'] && $data['panel_count'])
-              ? htmlspecialchars($data['panel_power'] * $data['panel_count'])
-              : '' ?>">
+                                                                                                    ? htmlspecialchars($data['panel_power'] * $data['panel_count'])
+                                                                                                    : '' ?>">
           </div>
         </div>
         <div class="row mb-3">
@@ -395,7 +449,7 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
           <?php
           $others = ['light_arrester', 'smart_controller', 'zero_export', 'light_earthing', 'delta_hub', 'ac_earthing', 'dc_earthing'];
           foreach ($others as $o):
-            ?>
+          ?>
             <div class="col-md-4">
               <div class="form-check">
                 <input type="checkbox" name="<?= $o ?>" value="1" class="form-check-input" id="<?= $o ?>">
@@ -424,7 +478,7 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
             <?php foreach ($nm_steps as $i => $label):
               $state = ($i < $currentStep) ? 'completed' : (($i === $currentStep) ? 'current' : 'upcoming');
               $barCls = ($i < $currentStep) ? 'completed' : 'upcoming'; // connector color to next
-              ?>
+            ?>
               <div class="nm-step <?= $state ?>">
                 <div class="nm-dot">✓</div>
                 <div class="nm-label"><?= htmlspecialchars($label) ?></div>
@@ -462,7 +516,7 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
       // =============================
       // Panel Box Inputs
       // =============================
-      document.getElementById('panelBoxCount').addEventListener('input', function () {
+      document.getElementById('panelBoxCount').addEventListener('input', function() {
         const count = parseInt(this.value);
         const container = document.getElementById('panelBoxInputs');
         container.innerHTML = '';
@@ -478,7 +532,7 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
       // =============================
       // Inverter Inputs
       // =============================
-      document.getElementById('inverterCount').addEventListener('input', function () {
+      document.getElementById('inverterCount').addEventListener('input', function() {
         const count = parseInt(this.value);
         const container = document.getElementById('inverterInputs');
         container.innerHTML = '';
@@ -536,7 +590,7 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
           loadTypes(typeSelect);
           loadPhases(phaseSelect);
 
-          manuSelect.addEventListener('change', function () {
+          manuSelect.addEventListener('change', function() {
             loadModels(this.value, modelSelect);
           });
 
@@ -544,7 +598,7 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
           const boxCountInput = inverterDiv.querySelector(`#inv${i}BoxCount`);
           const boxInputs = inverterDiv.querySelector(`#inv${i}BoxInputs`);
 
-          boxCountInput.addEventListener('input', function () {
+          boxCountInput.addEventListener('input', function() {
             const boxCount = parseInt(this.value);
             boxInputs.innerHTML = '';
             for (let j = 1; j <= boxCount; j++) {
@@ -633,11 +687,11 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
       // =============================
       // Battery Inputs
       // =============================
-      document.getElementById('batteryInstalled').addEventListener('change', function () {
+      document.getElementById('batteryInstalled').addEventListener('change', function() {
         document.getElementById('batterySection').style.display = this.checked ? 'block' : 'none';
       });
 
-      document.getElementById('batteryCount').addEventListener('input', function () {
+      document.getElementById('batteryCount').addEventListener('input', function() {
         const count = parseInt(this.value) || 0;
         document.getElementById('battery_count').value = count;
 
@@ -682,7 +736,7 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
           loadBatteryManufacturers(manufacturerSelect);
 
           // When manufacturer changes -> load types
-          manufacturerSelect.addEventListener('change', function () {
+          manufacturerSelect.addEventListener('change', function() {
             typeSelect.innerHTML = '<option value="">-- Select Type --</option>';
             modelSelect.innerHTML = '<option value="">-- Select Model --</option>';
             if (this.value) {
@@ -691,7 +745,7 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
           });
 
           // When type changes -> load models
-          typeSelect.addEventListener('change', function () {
+          typeSelect.addEventListener('change', function() {
             modelSelect.innerHTML = '<option value="">-- Select Model --</option>';
             if (manufacturerSelect.value && this.value) {
               loadBatteryModels(manufacturerSelect.value, this.value, modelSelect);
@@ -819,7 +873,7 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
               customInput.placeholder = `Enter custom ${placeholder}`;
 
               // toggle show/hide
-              sel.addEventListener('change', function () {
+              sel.addEventListener('change', function() {
                 if (this.value === 'custom') {
                   customInput.classList.remove('d-none');
                 } else {
@@ -891,7 +945,7 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
         renderCables(parseInt(countInput.value) || 0);
 
         // update on change
-        countInput.addEventListener('input', function () {
+        countInput.addEventListener('input', function() {
           renderCables(parseInt(this.value) || 0);
           document.getElementById(prefix + '_cable_count').value = this.value || 0;
         });
@@ -903,7 +957,7 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
       setupCableInput('battery');
 
       // Load global inverter type & phase dropdowns once page loads
-      document.addEventListener("DOMContentLoaded", function () {
+      document.addEventListener("DOMContentLoaded", function() {
         const select = document.querySelector("select[name='net_metering_progress']");
         const steps = document.querySelectorAll(".nm-step");
 
@@ -931,7 +985,7 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
         // initialize
         updateTimeline(currentStep);
 
-        select.addEventListener("change", function () {
+        select.addEventListener("change", function() {
           const newStep = parseInt(this.value);
 
           if (isNaN(newStep)) return;
@@ -952,10 +1006,9 @@ $currentStep = isset($data['net_metering_progress']) && $data['net_metering_prog
         });
       });
       // Load inverter types and phases when page is ready
-      document.addEventListener('DOMContentLoaded', function () {
+      document.addEventListener('DOMContentLoaded', function() {
         loadTypes(inverterTypeSelect);
         loadPhases(inverterPhaseSelect);
       });
-
     </script>
 </body>
